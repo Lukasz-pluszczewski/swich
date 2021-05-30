@@ -1,5 +1,5 @@
 # Swich
-> More developer-friendly switch alternative.
+> Switch but with a typo
 
 <h1>
   <a href="https://github.com/Lukasz-pluszczewski/swich">
@@ -117,7 +117,7 @@ const instance = swich([
 ```
 
 ### Multiple defaults
-By default (`returnMany: false`, see below) only the first match or last default is returned. In the case below, 'This is default 1' will never be returned.
+By default (`returnMany: false`, see below) only the first match (if not falling through) or last default is returned. In the case below, 'This is default 1' will never be returned.
 
 ```js
 const instance = swich([
@@ -247,7 +247,7 @@ const instance = swich([
 
 instance(120); // More than 50
 instance(-20); // Less than 0
-instance(20); // 20
+instance(20); // Between 0 and 50
 ```
 
 ```js
@@ -294,7 +294,7 @@ You can define your own *Pattern* matcher.
 ```js
 import { createSwich, defaultMatcher } from 'swich';
 
-const customSwich = createSwich({
+const swich = createSwich({
   matcher: config => (valueToMatch, pattern) => typeof pattern === 'object'
    ? pattern?.type === valueToMatch?.type
    : defaultMatcher(config)(valueToMatch, pattern),
@@ -331,7 +331,110 @@ instance('Uga buga'); // 'Unknown type'
 ```
 
 ### Fallthrough
-No [fallthrough](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/switch#methods_for_multi-criteria_case) support yet, sorry.
+Swich supports fallthrough functionality since version 1.1.0
+
+You can force the case fallthrough by passing `true` as third element of pattern tuple. This is equivalent to *not* adding break keyword at the end of case in switch.
+```js
+const instance = swich([
+  [lt(10), () => console.log('Less than 10'), true],
+  [gt(5), () => console.log('More than 5')],
+  [() => console.log('I am default')],
+]);
+
+instance(6); // 'Less than 10' 'More than 5'
+```
+
+Please note, that by default swich will fall through to the next *Result* even if *Pattern* for that result **does not match**. This is the same behaviour as switch:
+```js
+const instance = swich([
+  [lt(10), () => console.log('Less than 10'), true],
+  [gt(5), () => console.log('More than 5')],
+  [() => console.log('I am default')],
+]);
+
+instance(2); // 'Less than 10' 'More than 5'
+```
+
+Swich will fall through even to default *Result*, the same as switch. In the following example all *Result* functions are called:
+```js
+const instance = swich([
+  [lt(10), () => console.log('Less than 10'), true],
+  [gt(5), () => console.log('More than 5'), true],
+  [() => console.log('I am default')],
+]);
+
+instance(2); // 'Less than 10' 'More than 5' 'I am default'
+```
+
+### Fallthrough with stopFallThrough flag
+Because the default behaviour for switch (and swich) is ridicules you can set stopFallThrough flag to true to change it. With that flag, the fallthrough will not return or trigger *Result* if *Pattern* does not match the *Value*. Non-matching *Pattern* will also stop the fall through on that element.
+
+```js
+const instance = swich([
+  [lt(10), () => console.log('Less than 10'), true],
+  [gt(5), () => console.log('More than 5'), true],
+  [() => console.log('I am default')],
+], { stopFallThrough: true });
+
+instance(2); // 'Less than 10'
+```
+
+### Fallthrough with returnMany flag
+```js
+const instance = swich([
+  [lt(10), () => 'Less than 10', true],
+  [gt(5), () => 'More than 5', true],
+  [() => 'I am default'],
+], { returnMany: true });
+
+instance(2); // ['Less than 10', 'More than 5', 'I am default']
+```
+
+```js
+const instance = swich<number, string>([
+  [lt(10), () => 'Less than 10', true],
+  [gt(5), () => 'More than 5', true],
+  [gt(1), () => 'More than 1', true],
+  [() => 'I am default'],
+], { returnMany: true });
+
+instance(2); // ['Less than 10', 'More than 5', 'More than 1', 'I am default']
+```
+
+```js
+const instance = swich<number, string>([
+  [lt(10), () => 'Less than 10', true],
+  [gt(5), () => 'More than 5', true],
+  [gt(1), () => 'More than 1'],
+  [() => 'I am default'],
+], { returnMany: true });
+
+instance(2); // ['Less than 10', 'More than 5', 'More than 1']
+```
+
+### Fallthrough with stopFallThrough and returnMany flags
+stopFallThrough flag prevents swich from falling into default:
+```js
+const instance = swich([
+  [lt(10), () => 'Less than 10', true],
+  [gt(5), () => 'More than 5', true],
+  [() => 'I am default'],
+], { returnMany: true, stopFallThrough: true });
+
+instance(2); // ['Less than 10']
+```
+
+Here, swich falls through to default, because *Pattern* right before it has been matched
+```js
+const instance = swich<number, string>([
+  [lt(10), () => 'Less than 10', true],
+  [gt(5), () => 'More than 5', true],
+  [gt(1), () => 'More than 1', true],
+  [() => 'I am default'],
+], { returnMany: true, stopFallThrough: true });
+
+instance(2); // ['Less than 10', 'More than 1', 'I am default']
+```
 
 ### Comparator functions
 Four functions for number comparisons are provided
@@ -389,6 +492,9 @@ swich function accepts two parameters: array of *Pattern*, *Result* tuples and *
 `npm run demo`
 
 ## Changelog
+
+### 1.1.0
+- Added fallThrough functionality
 
 ### 1.0.0
 - Initial release

@@ -1,11 +1,12 @@
 import swich, {
   createSwich,
   gt,
+  gte,
   lt,
+  lte,
   defaultMatcher,
   defaultResultGetter,
 } from '../index';
-
 
 describe('swich', () => {
   it('Matches strings', () => {
@@ -120,10 +121,18 @@ describe('swich', () => {
   });
 
   it('Does not accept truthy return value from custom compare function when acceptTruthyFunctionReturn flag is set to false', () => {
-    const instance = swich<number | boolean, string>([
+    let instance = swich<number | boolean, string>([
       [(value: number | boolean) => value, 'This is true'],
       ['Default'],
     ], { acceptTruthyFunctionReturn: false });
+
+    expect(instance(1)).toEqual('Default');
+    expect(instance(true)).toEqual('This is true');
+
+    instance = swich<number | boolean, string>([
+      [(value: number | boolean) => value, 'This is true'],
+      ['Default'],
+    ], { acceptTruthyFunctionReturn: false, catchFunctionErrors: false });
 
     expect(instance(1)).toEqual('Default');
     expect(instance(true)).toEqual('This is true');
@@ -220,4 +229,187 @@ describe('swich', () => {
     expect(instance('Uga buga')).toEqual('Unknown type');
   });
 
+  describe('with fallthrough flag', () => {
+    it('Falls through to the next pattern', () => {
+      const lowerThanTenCb = jest.fn(() => 'Lower than 10');
+      const greaterThanFiveCb = jest.fn(() => 'Greater than 5');
+      const defaultCb = jest.fn(() => 'Default');
+
+      const instance = swich<number, string>([
+        [lt(10), lowerThanTenCb, true],
+        [gt(5), greaterThanFiveCb],
+        [defaultCb],
+      ]);
+
+      expect(instance(6)).toEqual('Greater than 5');
+      expect(lowerThanTenCb).toBeCalledTimes(1);
+      expect(greaterThanFiveCb).toBeCalledTimes(1);
+      expect(defaultCb).not.toBeCalled();
+    });
+    it('Falls through to the next pattern, not stop when Pattern doesn\'t match and returns default', () => {
+      const lowerThanTenCb = jest.fn(() => 'Lower than 10');
+      const greaterThanFiveCb = jest.fn(() => 'Greater than 5');
+      const defaultCb = jest.fn(() => 'Default');
+
+      const instance = swich<number, string>([
+        [lt(10), lowerThanTenCb, true],
+        [gt(5), greaterThanFiveCb, true],
+        [defaultCb],
+      ]);
+
+      expect(instance(3)).toEqual('Default');
+      expect(lowerThanTenCb).toBeCalledTimes(1);
+      expect(greaterThanFiveCb).toBeCalledTimes(1);
+      expect(defaultCb).toBeCalledTimes(1);
+    });
+    it('Falls through to the next pattern and return results for non-matching Patterns', () => {
+      const lowerThanTenCb = jest.fn(() => 'Lower than 10');
+      const greaterThanFiveCb = jest.fn(() => 'Greater than 5');
+
+      const instance = swich<number, string>([
+        [lt(10), lowerThanTenCb, true],
+        [gt(5), greaterThanFiveCb, true],
+      ]);
+
+      expect(instance(3)).toEqual('Greater than 5');
+      expect(lowerThanTenCb).toBeCalledTimes(1);
+      expect(greaterThanFiveCb).toBeCalledTimes(1);
+    });
+    it('Falls through to the next patterns and returns all results including default when returnMany flag is set', () => {
+      const lowerThanTenCb = jest.fn(() => 'Lower than 10');
+      const greaterThanFiveCb = jest.fn(() => 'Greater than 5');
+      const defaultCb = jest.fn(() => 'Default');
+
+      const instance = swich<number, string>([
+        [lt(10), lowerThanTenCb, true],
+        [gt(5), greaterThanFiveCb, true],
+        [defaultCb],
+      ], { returnMany: true });
+
+      expect(instance(3)).toEqual(['Lower than 10', 'Greater than 5', 'Default']);
+      expect(lowerThanTenCb).toBeCalledTimes(1);
+      expect(greaterThanFiveCb).toBeCalledTimes(1);
+      expect(defaultCb).toBeCalledTimes(1);
+    });
+
+    describe('and with stopFallThrough flag', () => {
+      it('Falls through to the next pattern and return last matching result', () => {
+        const lowerThanTenCb = jest.fn(() => 'Lower than 10');
+        const greaterThanFiveCb = jest.fn(() => 'Greater than 5');
+        const defaultCb = jest.fn(() => 'Default');
+
+        const instance = swich<number, string>([
+          [lt(10), lowerThanTenCb, true],
+          [gt(5), greaterThanFiveCb, true],
+          [defaultCb],
+        ], { stopFallThrough: true });
+
+        expect(instance(4)).toEqual('Lower than 10');
+        expect(lowerThanTenCb).toBeCalledTimes(1);
+        expect(greaterThanFiveCb).not.toBeCalled();
+        expect(defaultCb).not.toBeCalled();
+      });
+      it('Falls through to the next pattern and return default value', () => {
+        const lowerThanTenCb = jest.fn(() => 'Lower than 10');
+        const greaterThanFiveCb = jest.fn(() => 'Greater than 5');
+        const defaultCb = jest.fn(() => 'Default');
+
+        const instance = swich<number, string>([
+          [lt(10), lowerThanTenCb, true],
+          [gt(5), greaterThanFiveCb, true],
+          [defaultCb],
+        ], { stopFallThrough: true });
+
+        expect(instance(6)).toEqual('Default');
+        expect(lowerThanTenCb).toBeCalledTimes(1);
+        expect(greaterThanFiveCb).toBeCalledTimes(1);
+        expect(defaultCb).toBeCalledTimes(1);
+      });
+      it('Falls through to the next pattern and return all matching results with returnMany flag set', () => {
+        const lowerThanTenCb = jest.fn(() => 'Lower than 10');
+        const greaterThanFiveCb = jest.fn(() => 'Greater than 5');
+        const greaterThanTwoCb = jest.fn(() => 'Greater than 2');
+        const defaultCb = jest.fn(() => 'Default');
+
+        const instance = swich<number, string>([
+          [lt(10), lowerThanTenCb, true],
+          [gt(5), greaterThanFiveCb, true],
+          [gt(2), greaterThanTwoCb, true],
+          [defaultCb],
+        ], { stopFallThrough: true, returnMany: true });
+
+        expect(instance(4)).toEqual(['Lower than 10', 'Greater than 2', 'Default']);
+        expect(lowerThanTenCb).toBeCalledTimes(1);
+        expect(greaterThanFiveCb).not.toBeCalled();
+        expect(greaterThanTwoCb).toBeCalledTimes(1);
+        expect(defaultCb).toBeCalledTimes(1);
+
+        expect(swich([
+          [lt(10), () => 'Less than 10', true],
+          [gt(5), () => 'More than 5', true],
+          [() => 'I am default'],
+        ], { returnMany: true, stopFallThrough: true })(2)).toEqual(['Less than 10']);
+      });
+    });
+  });
 });
+
+describe('comparator function', () => {
+  describe('lt', () => {
+    expect(lt(10)(15)).toEqual(false);
+    expect(lt(10)(10)).toEqual(false);
+    expect(lt(10)(5)).toEqual(true);
+    expect(lt(10)(0)).toEqual(true);
+    expect(lt(10)(-5)).toEqual(true);
+
+    expect(lt(-5)(0)).toEqual(false);
+    expect(lt(-5)(-5)).toEqual(false);
+    expect(lt(-5)(-10)).toEqual(true);
+  });
+  describe('lte', () => {
+    expect(lte(10)(15)).toEqual(false);
+    expect(lte(10)(10)).toEqual(true);
+    expect(lte(10)(5)).toEqual(true);
+    expect(lte(10)(0)).toEqual(true);
+    expect(lte(10)(-5)).toEqual(true);
+
+    expect(lte(-5)(0)).toEqual(false);
+    expect(lte(-5)(-5)).toEqual(true);
+    expect(lte(-5)(-10)).toEqual(true);
+  });
+
+  describe('gt', () => {
+    expect(gt(10)(15)).toEqual(true);
+    expect(gt(10)(10)).toEqual(false);
+    expect(gt(10)(5)).toEqual(false);
+    expect(gt(10)(0)).toEqual(false);
+    expect(gt(10)(-5)).toEqual(false);
+
+    expect(gt(-5)(0)).toEqual(true);
+    expect(gt(-5)(-5)).toEqual(false);
+    expect(gt(-5)(-10)).toEqual(false);
+  });
+  describe('gte', () => {
+    expect(gte(10)(15)).toEqual(true);
+    expect(gte(10)(10)).toEqual(true);
+    expect(gte(10)(5)).toEqual(false);
+    expect(gte(10)(0)).toEqual(false);
+    expect(gte(10)(-5)).toEqual(false);
+
+    expect(gte(-5)(0)).toEqual(true);
+    expect(gte(-5)(-5)).toEqual(true);
+    expect(gte(-5)(-10)).toEqual(false);
+    expect(gte(-5)(-10)).toEqual(false);
+  });
+});
+
+it('lala', () => {
+  const instance = swich<number, string>([
+    [lt(10), () => 'Less than 10', true],
+    [gt(5), () => 'More than 5', true],
+    [gt(1), () => 'More than 1'],
+    [() => 'I am default'],
+  ], { returnMany: true });
+
+  console.log(instance(2)); // ['Less than 10', 'More than 1', 'I am default']
+})

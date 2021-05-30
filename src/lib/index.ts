@@ -6,7 +6,11 @@ type Pattern<TValue> =
   | ((value: TValue) => any)
   | any;
 type Result<TValue, TOutput> = TOutput | ((param: TValue) => TOutput);
-type CaseElement<TValue, TOutput> = [Pattern<TValue>, Result<TValue, TOutput>];
+type CaseElement<TValue, TOutput> = [
+  Pattern<TValue>,
+  Result<TValue, TOutput>,
+  true?
+];
 type DefaultCaseElement<TValue, TOutput> = [Result<TValue, TOutput>];
 type CaseElements<TValue, TOutput> = (
   | CaseElement<TValue, TOutput>
@@ -27,14 +31,17 @@ type Config<TValue, TOutput> = {
   catchFunctionErrors: boolean;
   performReplaceOnRegex: boolean;
   runResultFunction: boolean;
+  stopFallThrough: boolean;
   matcher: Matcher<TValue, TOutput>;
   resultGetter: ResultGetter<TValue, TOutput>;
 };
+type BasicConfig<TValue, TOutput> = Object.Omit<
+  Config<TValue, TOutput>,
+  "matcher" | "resultGetter"
+>;
 
 export const defaultMatcher =
-  <TValue, TOutput>(
-    config: Object.Omit<Config<TValue, TOutput>, "matcher" | "resultGetter">
-  ) =>
+  <TValue, TOutput>(config: BasicConfig<TValue, TOutput>) =>
   (valueToMatch: TValue, pattern: Pattern<TValue>): boolean => {
     if (pattern instanceof RegExp) {
       return typeof valueToMatch === "string"
@@ -105,6 +112,7 @@ export const createSwich =
     catchFunctionErrors: defaultCatchFunctionErrors = true,
     performReplaceOnRegex: defaultPerformReplaceOnRegex = false,
     runResultFunction: defaultRunResultFunction = true,
+    stopFallThrough: defaultStopFallThrough = false,
     matcher: defaultMatcherValue = defaultMatcher,
     resultGetter: defaultResultGetterValue = defaultResultGetter,
   }: Object.Optional<Config<TValue, TOutput>> = {}) =>
@@ -117,18 +125,20 @@ export const createSwich =
       catchFunctionErrors = defaultCatchFunctionErrors,
       performReplaceOnRegex = defaultPerformReplaceOnRegex,
       runResultFunction = defaultRunResultFunction,
+      stopFallThrough = defaultStopFallThrough,
       matcher = defaultMatcherValue,
       resultGetter = defaultResultGetterValue,
     }: Object.Optional<Config<TValue, TOutput>> = {}
   ) =>
   (valueToMatch: TValue | boolean = true) => {
-    const config = {
+    const config: BasicConfig<TValue, TOutput> = {
       returnMany,
       strict,
       acceptTruthyFunctionReturn,
       catchFunctionErrors,
       performReplaceOnRegex,
       runResultFunction,
+      stopFallThrough,
     };
 
     let found = false;
@@ -147,20 +157,29 @@ export const createSwich =
     const verifyValue = matcher(config);
     const getResult = resultGetter(config);
 
-    patterns.forEach((matchArr) => {
-      const [pattern, result] = matchArr;
-      if (found && !returnMany) {
+    let fallingThrough = false;
+    patterns.forEach((matchArr, index) => {
+      const [pattern, result, fallthrough] = matchArr;
+      if (found && !returnMany && !fallingThrough) {
         return;
       }
-      if (matchArr.length === 1 && !found) {
+      if (matchArr.length === 1 && (!found || fallingThrough)) {
         return setResult(
           getResult(valueToMatch as TValue, undefined, pattern),
           false
         );
       }
-      if (verifyValue(valueToMatch as TValue, pattern)) {
+
+      if (
+        matchArr.length !== 1 &&
+        ((fallingThrough && !stopFallThrough) ||
+          verifyValue(valueToMatch as TValue, pattern))
+      ) {
+        fallingThrough = !!fallthrough;
         return setResult(getResult(valueToMatch as TValue, pattern, result));
       }
+
+      fallingThrough = stopFallThrough ? false : !!fallthrough;
     });
 
     return result;
