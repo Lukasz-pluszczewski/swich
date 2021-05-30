@@ -1,9 +1,11 @@
 # Swich
-> Switch, but ~~with typo~~ better
+> More developer-friendly switch alternative.
 
-![Swich Logo](logo.png)
-
-More developer-friendly switch alternative.
+<h1>
+  <a href="https://github.com/Lukasz-pluszczewski/swich">
+    <img src="logo.png" alt="" height="160"/>
+  </a>
+</h1>
 
 ## Getting started
 ### Install the library
