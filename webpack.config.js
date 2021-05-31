@@ -33,6 +33,7 @@ module.exports = {
     path: path.resolve(__dirname, 'build'),
     library: "Swich",
     libraryTarget: 'umd',
+    globalObject: 'this',
     clean: true
   },
   optimization: {
