@@ -1,6 +1,8 @@
 # Swich
 > Switch but with a typo
 
+[![Lukasz-pluszczewski](https://circleci.com/gh/Lukasz-pluszczewski/swich.svg?style=svg)](https://circleci.com/gh/Lukasz-pluszczewski/swich)
+
 <h1>
   <a href="https://github.com/Lukasz-pluszczewski/swich">
     <img src="logo.png" alt="" height="160"/>
