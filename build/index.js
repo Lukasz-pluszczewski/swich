@@ -1,6 +1,6 @@
 /*!
  * 
- *   swich v1.1.1
+ *   swich v1.1.2
  *   https://github.com/Lukasz-pluszczewski/swich.git
  *
  *   Copyright (c) Łukasz Pluszczewski (https://github.com/Lukasz-pluszczewski) and project contributors.
