@@ -1,7 +1,7 @@
 # Swich
 > Switch but with a typo
 
-[![Lukasz-pluszczewski](https://circleci.com/gh/Lukasz-pluszczewski/swich.svg?style=svg)](https://circleci.com/gh/Lukasz-pluszczewski/swich)
+[![Lukasz-pluszczewski](https://circleci.com/gh/Lukasz-pluszczewski/swich.svg?style=shield)](https://circleci.com/gh/Lukasz-pluszczewski/swich)
 [![codecov](https://codecov.io/gh/Lukasz-pluszczewski/swich/branch/master/graph/badge.svg?token=QE3RVDDP6Z)](https://codecov.io/gh/Lukasz-pluszczewski/swich)
 
 <h1>
