@@ -19,7 +19,58 @@ Swich function accepts an array of [*Pattern*, *Result*] tuples. *Pattern* can b
 
 Swich returns function that accepts *Value* that is to be compared with *Patterns*.
 
-```js
+<table>
+<tr>
+<td>
+<div class="highlight highlight-source-js">
+<pre>
+import swich from 'swich';
+
+const instance = swich([
+['foo', () => {
+console.log('This is foo');
+}],
+['bar', () => {
+console.log('This is bar');
+}],
+[() => {
+console.log('This is default');
+}],
+]);
+
+instance('foo'); // 'This is foo'
+instance('bar'); // 'This is bar'
+instance('Lorem ipsum'); // 'This is default'
+</pre>
+</div>
+</td>
+<td>
+<div class="highlight highlight-source-js">
+<pre>
+const instance = value => {
+  swich(value) {
+    case 'foo':
+      console.log('This is foo');
+      break;
+    case 'bar':
+      console.log('This is bar');
+      break;
+    default:
+      console.log('This is default');    
+  }
+}
+
+instance('foo'); // 'This is foo'
+instance('bar'); // 'This is bar'
+instance('Lorem ipsum'); // 'This is default'
+</pre>
+</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="highlight highlight-source-js">
+<pre>
 import swich from 'swich';
 
 const instance = swich([
@@ -31,7 +82,31 @@ const instance = swich([
 instance('foo'); // 'This is foo'
 instance('bar'); // 'This is bar'
 instance('Lorem ipsum'); // 'This is default'
-```
+</pre>
+</div>
+</td>
+<td>
+<div class="highlight highlight-source-js">
+<pre>
+const instance = value => {
+  swich (value) {
+    case 'foo':
+      return 'This is foo';
+    case 'bar':
+      return 'This is bar';
+    default:
+      return 'This is default';    
+    };
+};
+
+instance('foo'); // 'This is foo'
+instance('bar'); // 'This is bar'
+instance('Lorem ipsum'); // 'This is default'
+</pre>
+</div>
+</td>
+</tr>
+</table>
 
 ## Table of contents
 - [Getting started](#getting-started)
