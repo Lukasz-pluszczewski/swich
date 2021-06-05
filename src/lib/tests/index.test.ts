@@ -402,14 +402,3 @@ describe('comparator function', () => {
     expect(gte(-5)(-10)).toEqual(false);
   });
 });
-
-it('lala', () => {
-  const instance = swich<number, string>([
-    [lt(10), () => 'Less than 10', true],
-    [gt(5), () => 'More than 5', true],
-    [gt(1), () => 'More than 1'],
-    [() => 'I am default'],
-  ], { returnMany: true });
-
-  console.log(instance(2)); // ['Less than 10', 'More than 1', 'I am default']
-})
