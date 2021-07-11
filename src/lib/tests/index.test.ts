@@ -218,7 +218,7 @@ describe('swich', () => {
       resultGetter: (config) => (valueToMatch, pattern, result) =>
         defaultResultGetter(config)(valueToMatch, pattern, typeof result === 'object' ? result.value : result),
     });
-    const instance = customSwich([
+    const instance = customSwich<string, { value: string } | string>([
       ['foo', { value: 'Type is foo' }],
       ['bar', { value: 'Type is bar' }],
       ['Unknown type'],

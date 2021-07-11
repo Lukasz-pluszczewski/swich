@@ -496,6 +496,10 @@ swich function accepts two parameters: array of *Pattern*, *Result* tuples and *
 
 ## Changelog
 
+### 1.2.0
+- Improved types
+- Added types exports
+
 ### 1.1.0
 - Added fallThrough functionality
 

@@ -1,30 +1,30 @@
 import { Object } from "ts-toolbelt";
 
-type Pattern<TValue> =
+export type Pattern<TValue> =
   | RegExp
   | ((value: TValue) => boolean)
   | ((value: TValue) => any)
   | any;
-type Result<TValue, TOutput> = TOutput | ((param: TValue) => TOutput);
-type CaseElement<TValue, TOutput> = [
+export type Result<TValue, TOutput> = TOutput | ((param: TValue) => TOutput);
+export type CaseElement<TValue, TOutput> = [
   Pattern<TValue>,
   Result<TValue, TOutput>,
   true?
 ];
-type DefaultCaseElement<TValue, TOutput> = [Result<TValue, TOutput>];
-type CaseElements<TValue, TOutput> = (
+export type DefaultCaseElement<TValue, TOutput> = [Result<TValue, TOutput>];
+export type CaseElements<TValue, TOutput> = (
   | CaseElement<TValue, TOutput>
   | DefaultCaseElement<TValue, TOutput>
 )[];
 
-type Matcher<TValue, TOutput> = (
+export type Matcher<TValue, TOutput> = (
   config: Object.Omit<Config<TValue, TOutput>, "matcher" | "resultGetter">
 ) => (valueToMatch: TValue, pattern: Pattern<TValue>) => boolean;
-type ResultGetter<TValue, TOutput> = (
+export type ResultGetter<TValue, TOutput> = (
   config: Object.Omit<Config<TValue, TOutput>, "matcher" | "resultGetter">
 ) => (valueToMatch: TValue, pattern: Pattern<TValue>, result: any) => TOutput;
 
-type Config<TValue, TOutput> = {
+export type Config<TValue, TOutput> = {
   returnMany: boolean;
   strict: boolean;
   acceptTruthyFunctionReturn: boolean;
@@ -35,7 +35,7 @@ type Config<TValue, TOutput> = {
   matcher: Matcher<TValue, TOutput>;
   resultGetter: ResultGetter<TValue, TOutput>;
 };
-type BasicConfig<TValue, TOutput> = Object.Omit<
+export type BasicConfig<TValue, TOutput> = Object.Omit<
   Config<TValue, TOutput>,
   "matcher" | "resultGetter"
 >;
@@ -78,11 +78,15 @@ export const defaultResultGetter =
   <TValue, TOutput>(
     config: Object.Omit<Config<TValue, TOutput>, "matcher" | "resultGetter">
   ) =>
-  (valueToMatch: TValue, pattern: Pattern<TValue>, result: any): TOutput => {
+  (
+    valueToMatch: TValue,
+    pattern: Pattern<TValue>,
+    result: TOutput
+  ): TOutput => {
     const getRegexResult = (
       valueToMatch: TValue,
       pattern: Pattern<TValue>,
-      replacement: any
+      replacement: TOutput
     ) => {
       if (
         typeof valueToMatch === "string" &&
@@ -104,33 +108,38 @@ export const defaultResultGetter =
       : resultToBeSet;
   };
 
-export const createSwich =
-  <TValue, TOutput>({
-    returnMany: defaultReturnMany = false,
-    strict: defaultStrict = true,
-    acceptTruthyFunctionReturn: defaultAcceptTruthyFunctionReturn = true,
-    catchFunctionErrors: defaultCatchFunctionErrors = true,
-    performReplaceOnRegex: defaultPerformReplaceOnRegex = false,
-    runResultFunction: defaultRunResultFunction = true,
-    stopFallThrough: defaultStopFallThrough = false,
-    matcher: defaultMatcherValue = defaultMatcher,
-    resultGetter: defaultResultGetterValue = defaultResultGetter,
-  }: Object.Optional<Config<TValue, TOutput>> = {}) =>
-  (
-    patterns: CaseElements<TValue, TOutput>,
-    {
-      returnMany = defaultReturnMany,
-      strict = defaultStrict,
-      acceptTruthyFunctionReturn = defaultAcceptTruthyFunctionReturn,
-      catchFunctionErrors = defaultCatchFunctionErrors,
-      performReplaceOnRegex = defaultPerformReplaceOnRegex,
-      runResultFunction = defaultRunResultFunction,
-      stopFallThrough = defaultStopFallThrough,
-      matcher = defaultMatcherValue,
-      resultGetter = defaultResultGetterValue,
-    }: Object.Optional<Config<TValue, TOutput>> = {}
-  ) =>
-  (valueToMatch: TValue | boolean = true) => {
+type SwichReturnMany<TValue, TOutput> = (
+  valueToMatch?: TValue | true
+) => TOutput[];
+type SwichReturnOne<TValue, TOutput> = (
+  valueToMatch?: TValue | true
+) => TOutput;
+
+function swich<TValue, TOutput>(
+  patterns: CaseElements<TValue, TOutput>,
+  config: Object.Optional<Config<TValue, TOutput>> & { returnMany: true }
+): SwichReturnMany<TValue, TOutput>;
+
+function swich<TValue, TOutput>(
+  patterns: CaseElements<TValue, TOutput>,
+  config?: Object.Optional<Config<TValue, TOutput>> & { returnMany?: false }
+): SwichReturnOne<TValue, TOutput>;
+
+function swich<TValue, TOutput>(
+  patterns: CaseElements<TValue, TOutput>,
+  {
+    returnMany = false,
+    strict = true,
+    acceptTruthyFunctionReturn = true,
+    catchFunctionErrors = true,
+    performReplaceOnRegex = false,
+    runResultFunction = true,
+    stopFallThrough = false,
+    matcher = defaultMatcher,
+    resultGetter = defaultResultGetter,
+  }: Object.Optional<Config<TValue, TOutput>> = {}
+) {
+  return (valueToMatch: TValue | true = true) => {
     const config: BasicConfig<TValue, TOutput> = {
       returnMany,
       strict,
@@ -142,15 +151,15 @@ export const createSwich =
     };
 
     let found = false;
-    let result: TOutput | TOutput[] = returnMany ? [] : null;
+    let result = (returnMany ? [] : null) as TOutput[] | TOutput;
 
-    const setResult = (value: TOutput, setFound = true) => {
+    const setResult = (value: any, setFound = true) => {
       found = setFound ? true : found;
 
       if (returnMany) {
         (result as TOutput[]).push(value);
       } else {
-        result = value;
+        (result as TOutput) = value;
       }
     };
 
@@ -184,6 +193,7 @@ export const createSwich =
 
     return result;
   };
+}
 
 export const gt = (compareValue: number) => (value: number) =>
   value > compareValue;
@@ -194,9 +204,34 @@ export const lt = (compareValue: number) => (value: number) =>
 export const lte = (compareValue: number) => (value: number) =>
   value <= compareValue;
 
-const defaultSwich = <TValue, TOutput>(
+type CreateSwichReturnMany<TValue, TOutput> = <TValue, TOutput>(
   patterns: CaseElements<TValue, TOutput>,
-  config: Object.Optional<Config<TValue, TOutput>> = {}
-) => createSwich<TValue, TOutput>()(patterns, config);
+  config?: Object.Optional<Config<TValue, TOutput>>
+) => SwichReturnMany<TValue, TOutput>;
 
-export default defaultSwich;
+type CreateSwichReturnOne<TValue, TOutput> = <TValue, TOutput>(
+  patterns: CaseElements<TValue, TOutput>,
+  config?: Object.Optional<Config<TValue, TOutput>>
+) => SwichReturnOne<TValue, TOutput>;
+
+export function createSwich<TValue, TOutput>(
+  defaultConfig: Object.Optional<Config<TValue, TOutput>> & { returnMany: true }
+): CreateSwichReturnMany<TValue, TOutput>;
+// @ts-ignore
+export function createSwich<TValue, TOutput>(
+  defaultConfig: Object.Optional<Config<TValue, TOutput>> & {
+    returnMany?: false;
+  }
+): CreateSwichReturnOne<TValue, TOutput>;
+
+export function createSwich<TDefaultValue, TDefaultOutput>(
+  defaultConfig: Object.Optional<Config<TDefaultValue, TDefaultOutput>>
+) {
+  return <TValue = TDefaultValue, TOutput = TDefaultOutput>(
+    patterns: CaseElements<TValue, TOutput>,
+    config: Object.Optional<Config<TValue, TOutput>> = {}
+    // @ts-ignore
+  ) => swich(patterns, { ...defaultConfig, ...config });
+}
+
+export default swich;
