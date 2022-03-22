@@ -1,5 +1,11 @@
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine)
+
 # Swich
 > Switch but with a typo
+
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://vshymanskyy.github.io/StandWithUkraine)
+[![Russian Warship Go Fuck Yourself](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/RussianWarship.svg)](https://vshymanskyy.github.io/StandWithUkraine)
+
 
 [![Lukasz-pluszczewski](https://circleci.com/gh/Lukasz-pluszczewski/swich.svg?style=shield)](https://circleci.com/gh/Lukasz-pluszczewski/swich)
 [![codecov](https://codecov.io/gh/Lukasz-pluszczewski/swich/branch/master/graph/badge.svg?token=QE3RVDDP6Z)](https://codecov.io/gh/Lukasz-pluszczewski/swich)
